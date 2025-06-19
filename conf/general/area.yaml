@@ -1,0 +1,27 @@
+# @package _global_
+
+# Settings for area to be computed
+area:
+  # Name of the area, e.g. africa/nigeria/lagos/osho OR africa/senegal OR africa/senegal/dakar
+  name: ???
+
+  # Visualizations path
+  viz_path: ${database_path}/${area.name}/viz
+
+  # Images path
+  images_path: ${database_path}/${area.name}/images
+
+  # Valuable data path
+  data_path: ${database_path}/${area.name}/data
+
+  # Other output data path
+  output_path: ${database_path}/${area.name}/output
+
+  # Other output data path
+  predictions_path: ${database_path}/${area.name}/predictions
+
+  # Other output data path
+  annotations_path: ${database_path}/${area.name}/annotations
+
+  # Coordinates of a custom-defined polygon: List[List[float]] -> list of [lat, lon] pairs
+  polygon: null

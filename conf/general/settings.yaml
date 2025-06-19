@@ -1,0 +1,28 @@
+# @package _global_
+
+# Name of SV maps
+sv_name: 'SV_map'
+
+# Name of OSM maps
+osm_name: 'OSM_map'
+
+# Annotations filename
+annotations_filename: 'annotations.json'
+
+# Annotations filename
+custom_polygon_filename: 'polygon_custom.geojson'
+
+# Meters of sub_windows overlap
+window_overlap: 40
+
+# Area, in meters, of a sub-window used to compute original window
+window_split_area: [600, 600]
+
+# Whether to use cloud logger or not
+cloud_logger: true
+
+# Whether to forcibly compute the OSM and SV graphs, regardless of the fact that a broader area was precomputed
+force_compute_graph: true
+
+# Whether to visualize results (for broader area check)
+viz: true

@@ -1,0 +1,31 @@
+retrieve:
+  name: retrieve
+
+  date_range:
+    start: '2020-01-01'
+    end:   '2024-12-31'
+
+  # Image sizes (640x640 is maximum)
+  img_size: [640, 640]
+
+  # Heading indicates the compass heading of the camera.
+  # Accepted values are from 0 to 360 (both values indicating North, with 90 indicating East, and 180 South).
+  # If you don't specify a heading, a value is calculated that directs the camera towards the specified location,
+  # from the point at which the closest photograph was taken. HOWEVER, THIS IS COMPUTED DYNAMICALLY IN THE CODE!
+  heading: null
+
+  # fov (default is 90) determines the horizontal field of view of the image expressed in degrees,
+  # with a maximum allowed value of 120. When dealing with a fixed-size viewport, as with a Street View image
+  # of a set size, field of view in essence represents zoom, with smaller numbers indicating a higher level of zoom.
+  fov: 95
+
+  # pitch (default is 0) specifies the up or down angle of the camera relative to the Street View vehicle.
+  # This is often, but not always, flat horizontal. Positive values angle the camera up (with 90 degrees indicating
+  # straight up); negative values angle the camera down (with -90 indicating straight down).
+  pitch: 0
+
+  # Number of threads to retrieve images
+  max_chunk_size: 20
+
+  # Make images public or not
+  public: false

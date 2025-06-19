@@ -1,0 +1,19 @@
+version: 1
+formatters:
+  detailed:
+    format: '[%(levelname)s|%(module)s|L%(lineno)d] %(asctime)s: %(message)s'
+    datefmt: '%Y-%m-%dT%H:%M:%S%z'
+handlers:
+  cloud:
+    class: google.cloud.logging.handlers.CloudLoggingHandler
+    name: mihai
+    level: INFO
+    formatter: detailed
+  console:
+    class: logging.StreamHandler
+    formatter: detailed
+    stream: ext://sys.stdout
+root:
+  level: INFO
+  handlers: [cloud]
+disable_existing_loggers: false

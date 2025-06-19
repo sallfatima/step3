@@ -1,0 +1,11 @@
+card:
+  name: card
+
+  # Visualize card
+  viz: true
+
+  # Whether to forcibly recompute the card (regardless if it was already built, or not)
+  force_recompute: true
+
+  # Number of processes for card building
+  max_workers: 2

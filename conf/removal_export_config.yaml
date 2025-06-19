@@ -1,0 +1,10 @@
+defaults:
+  - general:
+    - paths
+    - tokens
+    - settings
+    - cloud
+    - area
+  - removal_export: ???
+  - hydra_config
+  - _self_

@@ -1,0 +1,21 @@
+# Files to ignore
+**Makefile
+**credentials.json
+**load_env.sh
+**README.md
+**.gitignore
+**.env.example
+**.env
+**.geojson
+**.png
+**.pre-commit-config.yaml
+
+# Folders to ignore
+**/.venv
+**/logs
+**/__pycache__/
+**/terraform
+/.idea
+**/images*/
+**/output/
+**/data/

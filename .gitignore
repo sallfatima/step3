@@ -1,0 +1,45 @@
+# General files
+*.pyc
+*.csv
+*.html
+*.xlsx
+*.geojson
+*.png
+log.txt
+credentials.json
+
+# Terraform files
+*.tfstate
+*.tfstate.backup
+*.tfstate.backup.*
+*.tfstate.backup.*.lock
+*.tfstate.lock.info
+.terraform.lock.hcl
+.terraform/
+secrets.auto.tfvars
+
+# Sensitive files
+*.pem
+*.key
+*.json
+*.env
+
+# Temporary files
+*.log
+*.bak
+*.bak/*
+*.tmp
+*.zip
+
+# Folders
+**/.venv
+**/logs
+**/__pycache__/
+/.idea
+**/images*/
+**/output/
+**/data/
+
+# Keep all assets
+!assets/
+!assets/*

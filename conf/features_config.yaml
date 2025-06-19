@@ -1,0 +1,10 @@
+defaults:
+  - general:
+    - paths
+    - tokens
+    - settings
+    - cloud
+    - area
+  - features: ???
+  - hydra_config
+  - _self_

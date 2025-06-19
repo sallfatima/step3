@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "inference-pipeline"
+version = "0.1.0"
+description = "poetry for inference pipeline LengoAI"
+authors = ["MihaiDavid05 <davidmihai98@yahoo.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.9.0,<3.12"
+hydra-core = "^1.3.2"
+pydantic = "^2.9.2"
+python-dotenv = "^1.0.1"
+google-cloud = "^0.34.0"
+google-auth = "^2.36.0"
+google-cloud-storage = "^2.18.2"
+google-cloud-logging = "^3.11.3"
+tqdm = "^4.67.0"
+supervision = "^0.24.0"
+shapely = "^2.0.6"
+geopandas = "^1.0.1"
+unidecode = "^1.3.8"
+pyshp = "^2.3.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,27 @@
+image_removal:
+  name: image_removal
+
+  # Radius of ball around a lat/lon coord to search for duplicate instances
+  neighbor_distance_meters: 30
+
+  # List of classes ids to be considered for removal
+  export_classes_name: ['cpg-corner-shop']
+
+  # Whether to save the duplicate crops or not
+  save_duplicate_crops: true
+
+  # Directory name for duplicate crops
+  duplicate_crops_dir: duplicate_crops
+
+  # Whether images come from roboflow or not
+  from_roboflow: false
+  # Which character replaces the '.' in latitude longitude and heading from the image filename
+  from_roboflow_character: "_"
+  # In which positions should the 'from_roboflow_character' be replaced, in the filename
+  from_roboflow_positions: [1, 3, 7]
+
+  # Local ann file path (relative to inference pipeline module), if annotations are stored locally, else null
+  local_ann_file_path: null
+
+  # Whether to visualize the results
+  viz: True

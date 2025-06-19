@@ -1,0 +1,11 @@
+location_removal:
+  name: location_removal
+
+  # Class id to be considered for removal (ONLY cpg-corner-shop IS SUPPORTED, FOR NOW)
+  class_name: 'cpg-corner-shop'
+
+  # Local ann file path (relative to inference pipeline module), if annotations are stored locally, else null
+  local_ann_file_path: null
+
+  # Whether to visualize the results
+  viz: True

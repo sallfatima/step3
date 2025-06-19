@@ -1,0 +1,40 @@
+predict:
+  name: predict
+
+  # Name of the model to use
+  model_name: 'best_model_codetr.pth'
+
+  # Configuration file
+  config_name: 'model_config.py'
+
+  # Whether to store predictions or not
+  store_predictions: false
+
+  # Batch size for inference (this corresponds to the hardware that you select,
+  # current value fits the current hardware, but maybe more can fit)
+  batch_size: 4
+
+  # Perform class agnostic NMS
+  agnostic_nms: false
+  # Threshold for class-agnostic NMS
+  agnostic_nms_thresh: 0.7
+
+  # Bounding box confidence threshold (DO NOT CHANGE THIS, AS IT IS SET ACCORDING TO THE MODEL, from MMDetection)
+  bbox_conf_thresh: 0.3
+
+  # Whether to keep only CPGs or not
+  keep_only_cpgs: false
+
+  active_sampling:
+    # Whether to perform active sampling or not
+    enable: false
+    # [min, max] confidence for keeping detections with confidence in this interval
+    confidence_interval: [0.2, 0.4]
+    # Percentage (probability, at inference time) of samples to be persisted, per class. (NOTE: 0.5 represents 0.5%, not 50%)
+    probability: [20, 10, 10]
+    # Which classes to consider for sampling [CPG-corner-shop, corner-shop, street-booth-vendor]
+    selected_classes: [0, 1, 2]
+    # Annotation name:
+    annotation_filename: "annotations_active_sampling.json"
+    # Split name ('train', 'val', 'test')
+    split: 'train'

@@ -1,0 +1,4 @@
+# @package _global_
+
+# Mapbox token
+mapbox_token: ${oc.env:MAPBOX_TOKEN}

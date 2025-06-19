@@ -1,0 +1,30 @@
+upload_for_annotation:
+  name: upload_for_annotation
+
+  # Roboflow API Key
+  roboflow_api_key: ${oc.env:ROBOFLOW_KEY}
+
+  # Roboflow project name
+  roboflow_project_name: ${oc.env:ROBOFLOW_PROJECT_NAME}
+
+  # Maximum threads for uploading to Roboflow
+  max_chunk_size: 50
+
+  # List of images to upload for annotation (images FILENAMES), or null, or empty list.
+  filtered_images: []
+
+  # Database path for annotation file, one of: [${training_database_path}, ${database_path}].
+  # If null, all images from current area will be uploaded
+  annotations_database_source: ${database_path}
+
+  # Filename of the json annotations, if annotations_database_source is not null.
+  annotations_filename: 'annotations_no_duplicates_image_location.json'
+
+  # Split to use for the images: ['train', 'valid', 'test']
+  split: 'train'
+
+  # Tag list for the images to be uploaded: empty, or a list of strings
+  tag_list: []
+
+  # Classes IDs to be uploaded, from the annotation file, if provided, otherwise, empty list
+  upload_classes_name: ['cpg-corner-shop']

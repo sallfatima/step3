@@ -1,0 +1,9 @@
+einops
+h5py
+matplotlib
+numpy
+opencv-python
+pillow
+torch>=1.10.0
+torchvision
+tqdm

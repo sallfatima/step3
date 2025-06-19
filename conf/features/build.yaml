@@ -1,0 +1,47 @@
+build:
+  # Name of the action
+  name: build
+
+  # Define Overpass Turbo API url
+  overpass_url: https://overpass-api.de/api/interpreter
+
+  # Type can be in [pedestrian, bicycle, car]
+  network_type: car
+  # Read more in README.md of osm_utils module, under -l CLI option
+  unconnected_components: True
+  # Read more in README.md of osm_utils module, under -c CLI option
+  contract_graph: False
+  # Whether to output a json file graph with the network.
+  output_graph: True
+
+  # Enrich graph with multiple, closer points. If True, also specify the distance between points in meters
+  enrich: True
+  # This parameter also acts as a radius in the StreetViewPreference finder (in meters)
+  distance_between_points: 5
+
+  # Maximum length of an edge in the SV map (in meters)
+  big_edges_thresh: 50
+
+  # Maximum sub-windows threads to launch for OSM retrieval in building phase
+  max_chunk_size_osm: 10
+  # Maximum sub-windows threads number to launch in the SV finding phase (number of Chrome tabs !!!)
+  max_chunk_size_find: 5
+
+  # Window from which to resume the SV find in case of stopping
+  resume_sv_find_from: 0
+
+  # Maximum sub-windows threads number to launch in the OSM to JSON graph phase
+  max_chunk_size_osm_to_graph: 50
+  # Maximum threads to launch for location retrieval in SV finding phase
+  max_chunk_retrieve_location: 250
+
+  # Max merge workers
+  max_workers_merge: 20
+
+  # Visualize on mapbox maps
+  viz: true
+
+  
+  date_range:
+    start: '2020-01-01'
+    end:   '2024-12-31'

@@ -1,0 +1,25 @@
+export:
+  name: export
+
+  # Directory name in GCS for client deliverables for a specific area
+  output_path: deliverables
+
+  # List of class ids to export on the map
+  # NOTE: NOT TESTED WITH MULTIPLE CLASSES
+  classes_to_export: ['cpg-corner-shop']
+
+  # Annotation filename to export. If null, the <annotation_filename_from_general_settings>_no_duplicates_image_location.json, will be considered.
+  annotation_filename_to_export: null
+
+  # Displacement for shops markers on Google My Maps, in case multiple shops in image (in m):
+  shop_displacement: 2
+
+  # Make annotated images public or not. If False, a 7-day available signed URL would be generated for private bucket
+  public: True
+
+  # If images come from Roboflow platform (therefore, modified naming)
+  from_roboflow: False
+  # Which character replaces the '.' in latitude longitude and heading from the image filename
+  from_roboflow_character: "_"
+  # In which positions should the 'from_roboflow_character' be replaced, in the filename (index position starts from 1, not 0)
+  from_roboflow_positions: [1, 3, 7]

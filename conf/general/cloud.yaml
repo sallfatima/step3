@@ -1,0 +1,16 @@
+# @package _global_
+
+# GCS bucket name
+bucket_name: lengo-geomapping
+
+# GCS public bucket name
+public_bucket_name: lengo-geomapping-public
+
+# GCS project_id
+project_id: lengocollect
+
+# Google token
+google_token: ${oc.env:GOOGLE_TOKEN}
+
+# Google secret for GCP
+google_secret: ${oc.env:GOOGLE_SECRET}

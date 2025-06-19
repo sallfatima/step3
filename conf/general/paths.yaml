@@ -1,0 +1,19 @@
+# @package _global_
+
+# Path for all OSM files, Mapbox maps, OSM to SV mappings files, .json/.graphml graphs with roads, and images!
+database_path: database
+
+# Path for all OSM files, Mapbox maps, OSM to SV mappings files, .json/.graphml graphs with roads, and images!
+polygons_database_path: polygons_database
+
+# Path for all buildings from OpenBuildings dataset!
+buildings_database_path: buildings_database
+
+# Path for models
+models_database_path: models_database
+
+# Path for training data
+training_database_path: training_annotations_database
+
+# Logs path
+logs_path: logs
