@@ -23,6 +23,32 @@ from numpy.typing import NDArray
 from osm_utils.utils.converter import convert_osm_to_roadgraph
 from shapely import Point, Polygon
 from viz_utils import plot_graph
+from concurrent.futures import ThreadPoolExecutor, wait
+
+
+class OverpassThrottler:
+    """Gère le throttling des requêtes Overpass"""
+    def __init__(self, max_rpm: int = 30):
+        self.max_rpm = max_rpm
+        self._interval = 60.0 / max_rpm
+        self._last_request_time = 0
+        self._lock = threading.Lock()
+        
+    def wait_if_needed(self):
+        """Attend si nécessaire pour respecter le rate limit"""
+        with self._lock:
+            now = time.time()
+            time_since_last = now - self._last_request_time
+            wait_time = self._interval - time_since_last
+            
+            if wait_time > 0:
+                time.sleep(wait_time)
+            
+            self._last_request_time = time.time()
+
+# Instance globale
+overpass_throttler = OverpassThrottler()
+
 
 # Global event for pausing and resuming threads
 pause_event_find = threading.Event()
@@ -71,6 +97,7 @@ def retrieve_osm(
         String representation of OSM XML formatted response from Overpass Turbo API
     """
 
+    overpass_throttler.wait_if_needed()
     # Get coordinates
     s, w, n, e = coords[2], coords[0], coords[3], coords[1]
 
@@ -90,22 +117,36 @@ def retrieve_osm(
 
     data = {"data": query}
 
-    while True:
+    max_attempts = 5
+    for attempt in range(max_attempts):
         pause_event_osm.wait()
-
         try:
-            # Query OverPass to get XML formatted code based on the required coordinates in degrees
-            response = requests.post(base_url, headers=headers, data=data)
-            response.raise_for_status()
-
-            return response.text
+            # Throttling
+            overpass_throttler.wait_if_needed()
+            
+            response = requests.post(base_url, headers=headers, data=data, timeout=120)
+            
+            if response.status_code == 200:
+                return response.text
+            elif response.status_code == 429:
+                wait_time = 2 ** attempt
+                logger.warning(f"Got 429 from Overpass, waiting {wait_time}s")
+                time.sleep(wait_time)
+                continue
+            else:
+                response.raise_for_status()
+                
         except Exception as e:
-            pause_event_osm.clear()
-            logger.error(f"OSM file {cfg.area.name} -- Error at fetch: {e}")
-            time.sleep(60)
-            pause_event_osm.set()
+            if attempt < max_attempts - 1:
+                wait_time = 5 * (2 ** attempt)
+                logger.error(f"OSM error (attempt {attempt + 1}): {e}, retrying in {wait_time}s")
+                time.sleep(wait_time)
+            else:
+                raise
 
+    raise RuntimeError(f"Failed to retrieve OSM data after {max_attempts} attempts")
 
+    
 def get_osm_run(
     base_url: str,
     bucket: Bucket,
@@ -589,8 +630,8 @@ def get_available_sv_run(
             lons = ()
 
             attempt = 0
-            max_attempts = 10
-            seconds_timeout = 120
+            max_attempts = 5
+            initial_timeout = 120
             driver = None
 
             while attempt < max_attempts:
@@ -606,18 +647,26 @@ def get_available_sv_run(
                         radius=build_cfg.distance_between_points * 2,
                         cfg=cfg
                     )
-                    break
+                    if image_res and all(res == "NO_RESULTS" for res in image_res):
+                        logger.info(f"SV file {cfg.area.name} -- no SV coverage for sub-window {index}/{nr_windows - 1}")
+                        return
 
                 except Exception as e:
+                    
                     attempt += 1
-                    logger.error(
-                        f"SV file {cfg.area.name} -- ERROR encountered in thread: {e}"
-                    )
+                    logger.error(f"SV file {cfg.area.name} -- ERROR in thread (attempt {attempt}/{max_attempts}): {e}")
+                    
                     if attempt >= max_attempts:
-                        stop_event.set()
+                        # Ne set stop_event que pour les vraies erreurs
+                        if "NO_RESULTS" not in str(e) and "404" not in str(e):
+                            stop_event.set()
                     else:
-                        logger.warning(f"Retrying in {seconds_timeout} seconds...")
-                        time.sleep(seconds_timeout)
+                        # Backoff exponentiel
+                        backoff_time = initial_timeout * (2 ** (attempt - 1))
+                        logger.warning(f"Retrying in {backoff_time} seconds...")
+                        time.sleep(backoff_time)
+
+
                 finally:
                     if driver:
                         # Ensure driver is always quit
@@ -699,48 +748,58 @@ def get_available_sv(
         windows: sub-window polygons that form the desired area
         bucket: GCS bucket
     """
-
     # Define stop event
     stop_event = threading.Event()
 
     # Replace the Google token in the predefined HTML file
     html_file_path = replace_api_key(cfg.google_token)
 
-    # Start threads equal to the number of nodes in a chunk
+    # Configuration
     max_chunk_size = cfg.features.build.max_chunk_size_find
-
-    # Resume from iteration
     resume_from = cfg.features.build.resume_sv_find_from
-
+    
+    # NOUVEAU : Limiter le nombre de workers
+    max_workers = min(16, max_chunk_size)
+    
     windows_indexes = list(range(len(windows)))
-    for i in range(resume_from, len(windows), max_chunk_size):
-        cur_windows = windows_indexes[i : i + max_chunk_size]
-        retrieve_threads = []
-
-        for window_index in cur_windows:
-            thread = threading.Thread(
-                target=get_available_sv_run,
-                args=(
-                    cfg,
-                    bucket,
-                    html_file_path,
-                    window_index,
-                    len(windows),
-                    stop_event,
-                ),
-                daemon=True,
-            )
-            retrieve_threads.append(thread)
-            thread.start()
-            time.sleep(1)  # Delay between thread starts
-
-        for thread in retrieve_threads:
-            thread.join()
-
-        # After joining all threads, check if stop_event is set, indicating failure
-        if stop_event.is_set():
-            logger.error("Program terminated due to repeated errors in threads.")
-            raise RuntimeError("Program terminated due to repeated errors in threads.")
-
-    # Remove temporary html file
-    os.remove(html_file_path)
+    
+    try:
+        # NOUVEAU : Utiliser ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            for i in range(resume_from, len(windows), max_chunk_size):
+                cur_windows = windows_indexes[i : i + max_chunk_size]
+                
+                # Soumettre tous les jobs pour ce chunk
+                futures = []
+                for window_index in cur_windows:
+                    future = executor.submit(
+                        get_available_sv_run,
+                        cfg,
+                        bucket,
+                        html_file_path,
+                        window_index,
+                        len(windows),
+                        stop_event
+                    )
+                    futures.append(future)
+                    
+                    # Petit délai entre les soumissions
+                    time.sleep(0.5)
+                
+                # Attendre que tous les jobs du chunk soient terminés
+                wait(futures)
+                
+                # Vérifier si stop_event est set après chaque chunk
+                if stop_event.is_set():
+                    logger.error("Program terminated due to repeated errors in threads.")
+                    raise RuntimeError("Program terminated due to repeated errors in threads.")
+                
+                # Pause entre les chunks
+                if i + max_chunk_size < len(windows):
+                    logger.info(f"Completed chunk ending at {min(i + max_chunk_size, len(windows))}/{len(windows)}")
+                    time.sleep(2)
+                    
+    finally:
+        # Remove temporary html file
+        if os.path.exists(html_file_path):
+            os.remove(html_file_path)

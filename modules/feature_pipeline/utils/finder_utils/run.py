@@ -62,7 +62,8 @@ def find(
     html_file_path: str,
     driver: WebDriver,
     radius: int,
-    cfg
+    cfg,
+    timeout: int = 60  # ← AJOUTER ce paramètre avec valeur par défaut
 ) -> Tuple[List[List[str]], Tuple[float, ...], Tuple[float, ...]]:
     """
     Finds available SV locations
@@ -90,7 +91,7 @@ def find(
         logger.error(f"Inside run error is: {e}")
 
     # Set timeout for the script
-    driver.set_script_timeout(1200)
+    driver.set_script_timeout(timeout)
 
     # Load the JS code in memory
     with open("utils/finder_utils/find.js", "r") as f:

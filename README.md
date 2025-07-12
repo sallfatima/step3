@@ -10,7 +10,7 @@ Geo-mapping stores across the world.
 - Create an account on [Mapbox](https://www.mapbox.com/). Go to ```Tokens``` tab and get the public token.
 - Create an account on [Roboflow](https://roboflow.com/). After logging in, join the current geo-mapping project (lengoai_nigeria_lagos_apapa_od) by clicking this [link](https://app.roboflow.com/join/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ3b3Jrc3BhY2VJZCI6ImRkNVZCNnpsV0ZWbGRMNU9Ydk56WWN1ekVqYjIiLCJyb2xlIjoicmV2aWV3ZXIiLCJpbnZpdGVyIjoic2hhamFoYW5Ad2lzZXBsLmNvbSIsImlhdCI6MTczODMyMDkxN30.btEV5zkOu_Aksq5Q8HahhklzSKhFhB-qi7es3QIcGYA). Go to ```Settings -> API Keys -> Private API Key``` to get the Roboflow key.
 - For GoogleAPI token follow [these](https://developers.google.com/maps/documentation/javascript/get-api-key) instructions.
-- For a URL signing secret follow [these](https://developers.google.com/maps/documentation/maps-static/digital-signature) instructions. This si used to signthe URL when using Static StreetView API in the [`retrieve` action](modules/feature_pipeline/README.md/#1-actions), for downloading multiple images from Google Maps.
+- For a URL signing secret follow [these](https://developers.google.com/maps/documentation/maps-static/digital-signature) instructions. This is used to sign the URL when using Static StreetView API in the [`retrieve` action](modules/feature_pipeline/README.md/#1-actions), for downloading multiple images from Google Maps.
 - If working on Windows machine: install Git Bash (from [git](https://git-scm.com/downloads) official download) and always run the `make` commands only from Git Bash.
 - Generate a JSON key (a `.json` file) corresponding to the GCP Service Account that you are using (you should use `cloud-run` Service Account as it has all the necessary permissions). Follow section `Create a service account key -> Console` from [here](https://cloud.google.com/iam/docs/keys-create-delete#iam-service-account-keys-create-console).
 - Replace all `credentials.json.example` files with the `.json` key previously generated (tip: you can rename it to `credentials.json`)
@@ -336,14 +336,12 @@ Each pipeline has an associated Makefile with similar commands to Terraform ones
 
 Other necessary tools are stored under `tools/` directory. Here is a breakdown:
 
-TODO
-
 ## :white_check_mark: 7. TODOs
 
 You should also check the TODOs sections of each individual pipeline. Below you will find TODOs that apply to multiple (common) parts of the project:
 
 1. **Workflow**:
-   1. [ ]  Fix the cloud function email notification for Batch Job failures, in the inference and duplicate removal pipelines (maybe also add email notification for failure in the feature pipeline, too, although expensive resources are not used, like a GPU).
+   1. [ ]  Fix the cloud function email notification for Batch Job failures, in the inference and duplicate removal pipelines (maybe also add email notification for failure in the feature pipeline, too, although expensive resources are not used, like a GPU). --> _a notification system exists but has not yet been deployed (contact:guillaume@lengo.ai)_.
    2. [ ]  Investigate the resource needed for inference and duplicate removal pipelines, and allocate the right (minimum required) resource for Batch Jobs (currently a bit too loose I believe, in terms of boot disk memory; the GPU is the minimum possible, a T4)
    3. [ ]  Create a spatial database, such that for an area (a polygon) that encompasses another smaller, already processed area (polygon), the data (images, or card, or predictions, or whatever) is automatically retrieved, and not computed again, from scratch. THIS MAY INVOLVE A LOT OF WORK, AND ENTIRE CODE REFACTORING :(
 
@@ -354,3 +352,5 @@ You should also check the TODOs sections of each individual pipeline. Below you 
 
 ## 	:adult: 6. Contributors
 Mihai David - [davidmihai9805@gmail.com](mailto:davidmihai9805@gmail.com).
+Brunot Mouan - [brunotmouan@gmail.com] (mailto:brunotmouan@gmail.com).
+Fatou Sall - [fatousall60@gmail.com] (mailto:fatousall60@gmail.com).

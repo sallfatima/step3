@@ -66,7 +66,7 @@ resource "google_project_service" "run_api" {
 
 # Create pub/sub topic
 resource "google_pubsub_topic" "batch_job_notifications" {
-  name = "batch-job-status-updated-removal-export-pipeline_v2"
+  name = "batch-job-status-updated-removal-export-pipeline-2VV"
 }
 
 # # Define bucket

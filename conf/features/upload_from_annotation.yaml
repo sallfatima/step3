@@ -2,12 +2,17 @@ upload_from_annotation:
   name: upload_from_annotation
 
   # Available classes. This is set because the order of them must be kept, in order to merge multiple annotations
-  common_classes: ["cpg-corner-shop", "corner-shop", "street-booth-vendor"]
+  #common_classes: ["cpg-corner-shop", "corner-shop", "street-booth-vendor"]
+
+  common_classes: ["CPG-corner-shop", "corner-shop", "street-booth-vendor","supermarket-minimarket"]
+
+
 
   # Local dataset sources (one, or more; if many they are all aggregated under one annotation file)
   # These are local folder paths, which contain the json annotation file,
   # as they come from unzipped, exported, dataset versions, from Roboflow.
-  local_sources: ["C:\\Users\\david\\Downloads\\LengoAI_Nigeria_Lagos_Apapa_OD.v38-airways-lagos.coco-mmdetection\\train"]
+  local_sources: ["/Users/fatousall/Documents/geomapping_cpg_annotations_15/train"]
+
 
   # Filename of the json annotations (this name needs to be unique)
   annotations_filename: "annotations_CPG_only_roboflow_annotated.json"

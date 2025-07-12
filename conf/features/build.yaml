@@ -28,7 +28,7 @@ build:
   max_chunk_size_find: 5
 
   # Window from which to resume the SV find in case of stopping
-  resume_sv_find_from: 0
+   : 0
 
   # Maximum sub-windows threads number to launch in the OSM to JSON graph phase
   max_chunk_size_osm_to_graph: 50
@@ -41,7 +41,15 @@ build:
   # Visualize on mapbox maps
   viz: true
 
-  
+  max_workers_sv: 16          # Limite threads SV
+  sv_retry_attempts: 5        # Nombre de retries
+  sv_timeout: 60              # Timeout en secondes
+  sv_backoff_initial: 5       # Délai initial backoff
+
+  # Pour Overpass
+  overpass_max_rpm: 30        # Requêtes par minute
+  overpass_timeout: 120       # Timeout Overpass
+
   date_range:
     start: '2020-01-01'
     end:   '2024-12-31'

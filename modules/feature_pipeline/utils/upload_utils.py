@@ -270,13 +270,19 @@ def upload_for_annotation(cfg: SetupConfig, bucket: Bucket) -> None:
         # Remove temporary folder
         shutil.rmtree(temp_dataset_path)
 
-
 def upload_from_annotation(cfg: SetupConfig, bucket: Bucket) -> None:
     """(Merges) and uploads local annotation files, from Roboflow, to GCS"""
+    import tempfile
+    import shutil
+    import json
+    import uuid
+
+    # Generate unique execution ID for debugging
+    execution_id = str(uuid.uuid4())[:8]
+    logger.info(f"[EXEC-{execution_id}] Starting upload_from_annotation")
 
     # Get config params
     features_cfg = cfg.features
-    classes = features_cfg.upload_from_annotation.common_classes
     local_sources = features_cfg.upload_from_annotation.local_sources
     target_annotations_filename = (
         features_cfg.upload_from_annotation.annotations_filename
@@ -286,38 +292,179 @@ def upload_from_annotation(cfg: SetupConfig, bucket: Bucket) -> None:
     # Set Roboflow default annotation filename
     default_annotation_filename = "_annotations.coco.json"
 
-    # Initialize datasets
-    datasets = []
+    logger.info(f"[EXEC-{execution_id}] Processing {len(local_sources)} annotation source(s)")
+    logger.info(f"[EXEC-{execution_id}] Target filename: {target_annotations_filename}")
+    logger.info(f"[EXEC-{execution_id}] Area annotations path: {area_annotations_path}")
 
-    for local_source in local_sources:
-        annotations_path = os.path.join(local_source, default_annotation_filename)
+    # 🚀 OPTIMIZATION: Single source - direct copy (fast path)
+    if len(local_sources) == 1:
+        logger.info(f"[EXEC-{execution_id}] 🚀 FAST PATH: Single source detected")
+        local_source = local_sources[0]
+        
+        # Handle GCS source with optimized download
+        if not local_source.startswith('/') and not os.path.exists(local_source):
+            logger.info(f"[EXEC-{execution_id}] Downloading annotation file from GCS: {local_source}")
+            
+            # Download only the annotation file (not all images)
+            annotation_blob_path = f"{local_source}/{default_annotation_filename}"
+            annotation_blob = bucket.blob(annotation_blob_path)
+            
+            if not annotation_blob.exists():
+                logger.error(f"[EXEC-{execution_id}] Annotation file not found: {annotation_blob_path}")
+                raise FileNotFoundError(f"Annotation file not found in GCS: {annotation_blob_path}")
+            
+            # Use temp file with execution ID to avoid conflicts
+            temp_annotation_file = f"temp_{execution_id}_{default_annotation_filename}"
+            logger.info(f"[EXEC-{execution_id}] Downloading to: {temp_annotation_file}")
+            annotation_blob.download_to_filename(temp_annotation_file)
+            
+            # Read and process
+            with open(temp_annotation_file, "r") as source_file:
+                data_dict = json.load(source_file)
+            
+            # Cleanup temp file immediately
+            os.remove(temp_annotation_file)
+            logger.info(f"[EXEC-{execution_id}] Temp file cleaned up")
+            
+        else:
+            # Local source
+            logger.info(f"[EXEC-{execution_id}] Using local path: {local_source}")
+            annotations_path = os.path.join(local_source, default_annotation_filename)
+            
+            if not os.path.exists(annotations_path):
+                logger.error(f"[EXEC-{execution_id}] Local annotation file not found: {annotations_path}")
+                raise FileNotFoundError(f"Annotation file not found: {annotations_path}")
+            
+            with open(annotations_path, "r") as source_file:
+                data_dict = json.load(source_file)
 
-        # Create supervision dataset
-        dataset = DetectionDataset.from_coco(
-            images_directory_path=local_source, annotations_path=annotations_path
-        )
-        dataset.classes = classes
-        datasets.append(dataset)
+        # Add enhanced metadata
+        if "info" not in data_dict:
+            data_dict["info"] = {}
+        data_dict["info"]["description"] = f"Annotations for {cfg.area.name}"
+        data_dict["info"]["contributor"] = f"geo-mapping upload_from_annotation [EXEC-{execution_id}]"
+        data_dict["info"]["processing_mode"] = "fast_path_single_source"
+        
+        logger.info(f"[EXEC-{execution_id}] ✅ Fast path completed - {len(data_dict.get('images', []))} images, {len(data_dict.get('annotations', []))} annotations")
+        
+    else:
+        # 🔧 ROBUST PATH: Multiple sources - use CloudDetectionDataset (robust but slower)
+        logger.info(f"[EXEC-{execution_id}] 🔧 ROBUST PATH: Multiple sources detected ({len(local_sources)})")
+        
+        datasets = []
+        temp_dirs_to_cleanup = []
 
-    # Merge datasets
-    final_dataset = DetectionDataset.merge(datasets)
-    final_dataset.as_coco(annotations_path=target_annotations_filename)
+        for idx, local_source in enumerate(local_sources):
+            logger.info(f"[EXEC-{execution_id}] Processing source {idx+1}/{len(local_sources)}: {local_source}")
+            
+            # Handle GCS sources with full download
+            if not local_source.startswith('/') and not os.path.exists(local_source):
+                logger.info(f"[EXEC-{execution_id}] Downloading from GCS path: {local_source}")
+                
+                temp_dir = tempfile.mkdtemp(prefix=f"gcs_download_{execution_id}_")
+                actual_local_source = os.path.join(temp_dir, "annotations")
+                os.makedirs(actual_local_source, exist_ok=True)
+                temp_dirs_to_cleanup.append(temp_dir)
+                
+                # Download all files for this source
+                blobs = bucket.list_blobs(prefix=local_source)
+                downloaded_files = 0
+                
+                for blob in blobs:
+                    if blob.name.endswith('/'):  # Skip directory markers
+                        continue
+                        
+                    relative_path = blob.name[len(local_source):].lstrip('/')
+                    if not relative_path:
+                        continue
+                        
+                    local_file_path = os.path.join(actual_local_source, relative_path)
+                    os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
+                    
+                    blob.download_to_filename(local_file_path)
+                    downloaded_files += 1
+                
+                logger.info(f"[EXEC-{execution_id}] Downloaded {downloaded_files} files from source {idx+1}")
+            else:
+                actual_local_source = local_source
+                logger.info(f"[EXEC-{execution_id}] Using local path: {actual_local_source}")
 
-    # Read annotation json
-    with open(target_annotations_filename, "r") as json_file:
-        data_dict = json.load(json_file)
+            annotations_path = os.path.join(actual_local_source, default_annotation_filename)
+            
+            if not os.path.exists(annotations_path):
+                logger.error(f"[EXEC-{execution_id}] Annotation file not found: {annotations_path}")
+                raise FileNotFoundError(f"Annotation file not found: {annotations_path}")
 
-    # Sert path in GCS
+            # Use CloudDetectionDataset for robust processing
+            logger.info(f"[EXEC-{execution_id}] Creating CloudDetectionDataset for source {idx+1}")
+            dataset = CloudDetectionDataset.from_coco(
+                images_directory_path=actual_local_source, 
+                annotations_path=annotations_path,
+                bucket=bucket
+            )
+            
+            logger.info(f"[EXEC-{execution_id}] Source {idx+1}: {len(dataset.image_paths)} images, {len(dataset.classes)} classes: {dataset.classes}")
+            datasets.append(dataset)
+
+        # Merge datasets with CloudDetectionDataset robustness
+        logger.info(f"[EXEC-{execution_id}] Merging {len(datasets)} datasets...")
+        try:
+            final_dataset = CloudDetectionDataset.merge(datasets, bucket)
+            logger.info(f"[EXEC-{execution_id}] ✅ Merge successful: {len(final_dataset.image_paths)} total images")
+        except ValueError as e:
+            logger.error(f"[EXEC-{execution_id}] ❌ Merge failed: {e}")
+            raise
+
+        # Export to COCO format
+        logger.info(f"[EXEC-{execution_id}] Exporting merged dataset to COCO format")
+        final_dataset.as_coco(annotations_path=target_annotations_filename)
+        
+        # Read the merged annotation file
+        with open(target_annotations_filename, "r") as json_file:
+            data_dict = json.load(json_file)
+            
+        # Add enhanced metadata for multi-source
+        if "info" not in data_dict:
+            data_dict["info"] = {}
+        data_dict["info"]["description"] = f"Merged annotations for {cfg.area.name}"
+        data_dict["info"]["contributor"] = f"geo-mapping upload_from_annotation [EXEC-{execution_id}]"
+        data_dict["info"]["processing_mode"] = f"robust_path_multi_source_{len(local_sources)}_sources"
+        data_dict["info"]["source_count"] = len(local_sources)
+        
+        # Cleanup temporary directories
+        for temp_dir in temp_dirs_to_cleanup:
+            logger.info(f"[EXEC-{execution_id}] Cleaning up temp directory: {temp_dir}")
+            shutil.rmtree(temp_dir)
+            
+        logger.info(f"[EXEC-{execution_id}] ✅ Robust path completed - {len(data_dict.get('images', []))} images, {len(data_dict.get('annotations', []))} annotations")
+
+    # Write local target file (common for both paths)
+    logger.info(f"[EXEC-{execution_id}] Writing local target file: {target_annotations_filename}")
+    with open(target_annotations_filename, "w") as target_file:
+        json.dump(data_dict, target_file, indent=2)
+
+    # Upload to GCS (common final step)
     gsc_filepath = f"{area_annotations_path}/{target_annotations_filename}"
+    logger.info(f"[EXEC-{execution_id}] Target GCS path: {gsc_filepath}")
 
     # Check for file existence
     if bucket.blob(gsc_filepath).exists():
-        error_text = f"The annotation file with name {target_annotations_filename} already exists, cannot override!"
+        error_text = f"[EXEC-{execution_id}] The annotation file {target_annotations_filename} already exists, cannot override!"
         logger.error(error_text)
         raise ValueError(error_text)
     else:
-        # Upload to GCS
+        logger.info(f"[EXEC-{execution_id}] Uploading to GCS: {gsc_filepath}")
         upload_json_to_gcs(bucket, gsc_filepath, data_dict)
+        logger.info(f"[EXEC-{execution_id}] ✅ Successfully uploaded to GCS")
 
-    # Remove local, merged, annotation file
-    os.remove(target_annotations_filename)
+    # Cleanup local file
+    if os.path.exists(target_annotations_filename):
+        os.remove(target_annotations_filename)
+        logger.info(f"[EXEC-{execution_id}] Local file cleaned up")
+    
+    # Final summary
+    total_images = len(data_dict.get('images', []))
+    total_annotations = len(data_dict.get('annotations', []))
+    processing_mode = data_dict.get('info', {}).get('processing_mode', 'unknown')
+    
+    logger.info(f"[EXEC-{execution_id}] 🎉 COMPLETED - Mode: {processing_mode}, Images: {total_images}, Annotations: {total_annotations}")

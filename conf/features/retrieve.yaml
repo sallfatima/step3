@@ -1,10 +1,6 @@
 retrieve:
   name: retrieve
 
-  date_range:
-    start: '2020-01-01'
-    end:   '2024-12-31'
-
   # Image sizes (640x640 is maximum)
   img_size: [640, 640]
 

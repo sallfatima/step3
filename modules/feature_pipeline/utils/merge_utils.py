@@ -119,8 +119,7 @@ def parallel_merge(graphs: List[nx.Graph], max_workers: int) -> nx.Graph:
     """Create pairs of 2 graphs and merge them 2 by 2."""
 
     if not graphs:
-        logger.info(f"[Empty graph list provided to parallel_merge.")
-        return nx.Graph()
+        raise ValueError("Empty graph list provided to parallel_merge.")
 
     while len(graphs) > 1:
         pairs = [(graphs[i], graphs[i + 1]) for i in range(0, len(graphs) - 1, 2)]

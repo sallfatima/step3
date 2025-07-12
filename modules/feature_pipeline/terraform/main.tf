@@ -86,11 +86,6 @@ resource "google_cloud_run_v2_job" "feature_pipeline_job" {
 
         # Define the environment variables for the container
         env {
-          name  = "JOB_NAME"
-          value = each.key
-        }
-
-        env {
           name  = "MAPBOX_TOKEN"
           value = var.MAPBOX_TOKEN
         }
@@ -141,7 +136,7 @@ resource "google_project_iam_member" "cloud_scheduler" {
 # Define Google Cloud Scheduler
 resource "google_cloud_scheduler_job" "feature_pipeline_scheduler" {
   for_each    = var.cli_args_per_job
-  name        = "geomapping-features-scheduler-${each.key}_v2"
+  name        = "geomapping-features-scheduler-${each.key}"
   description = "Run geomapping job ${each.key}"
 
   region      = var.location
